@@ -5,10 +5,8 @@ Reqviem plays audio from YouTube links directly in Discord voice channels, with 
 ## Features - Stack
 
 - Play music from YouTube URLs
-- Pause and resume playback
-- Skip tracks
-- Manage per-server queues
-- Stop playback and clear the queue
+- Pause and resume playback, Skip tracks
+- Manage per-server queues, Stop playback and clear queue
 
 - Dockerized for deployment
 - Python 3.12
@@ -35,7 +33,7 @@ Invite your bot to your Discord server with the `bot` and `applications.commands
 
 https://discord.com/api/oauth2/authorize?client_id="your-id"&permissions=8&scope=bot
 
-you can use this link to invite your bot with administrator perms and replace your-id with your discord application id (not your token)
+you can use this link to invite your bot with administrator perms and replace `your-id` with your discord application id (not your token)
 
 ### Run
 
