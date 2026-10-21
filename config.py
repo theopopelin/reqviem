@@ -12,7 +12,7 @@ logging.basicConfig(
 
 logger = logging.getLogger("reqviem")
 
-TOKEN = os.getenv("DISCORD_TOKEN")
+TOKEN = os.getenv("DISCORD_TOKEN_REQVIEM")
 
 if not TOKEN:
     raise RuntimeError("missing DISCORD_TOKEN.")
