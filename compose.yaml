@@ -1,0 +1,7 @@
+services:
+  reqviem:
+    build: .
+    container_name: reqviem
+    restart: unless-stopped
+    env_file:
+      - .env
