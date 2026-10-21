@@ -20,7 +20,7 @@ logger = logging.getLogger("reqviem")
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 if not TOKEN:
-    raise RuntimeError("La variable DISCORD_TOKEN est manquante.")
+    raise RuntimeError("missing DISCORD_TOKEN.")
 
 YDL_OPTIONS = {
     "format": "bestaudio/best",
@@ -57,7 +57,7 @@ def extract_info(url: str) -> dict:
         info = ydl.extract_info(url, download=False)
 
     if not info:
-        raise ValueError("Impossible de récupérer les informations.")
+        raise ValueError("Could not get info.")
 
     return info
 
@@ -107,7 +107,7 @@ class GuildPlayer:
 
                     audio_url = info.get("url")
                     if not audio_url:
-                        raise ValueError("Aucun flux audio disponible.")
+                        raise ValueError("No audio stream available.")
 
                     source = discord.FFmpegPCMAudio(
                         audio_url,
@@ -124,7 +124,7 @@ class GuildPlayer:
                     def after_playback(error):
                         if error:
                             logger.error(
-                                "Erreur de lecture sur le serveur %s: %s",
+                                "Server error %s: %s",
                                 self.guild.id,
                                 error,
                             )
@@ -138,7 +138,7 @@ class GuildPlayer:
                     self.voice.play(source, after=after_playback)
 
                     logger.info(
-                        "Lecture de '%s' sur le serveur %s",
+                        "Playing '%s' on %s",
                         track.title,
                         self.guild.id,
                     )
@@ -146,12 +146,12 @@ class GuildPlayer:
 
                 except Exception:
                     logger.exception(
-                        "Impossible de lire '%s'",
+                        "Could not play '%s'",
                         track.title,
                     )
                     self.current = None
 
-            logger.info("File vide sur le serveur %s", self.guild.id)
+            logger.info("Empty queue on %s", self.guild.id)
 
     async def _after_playback(self):
         self.current = None
@@ -179,14 +179,14 @@ async def connect_player(
 ) -> GuildPlayer | None:
     if interaction.guild is None:
         await interaction.followup.send(
-            "Cette commande doit être utilisée dans un serveur.",
+            "Command must be used on a server.",
             ephemeral=True,
         )
         return None
 
     if not isinstance(interaction.user, discord.Member):
         await interaction.followup.send(
-            "Impossible de récupérer ton membre Discord.",
+            "Could not get discord user.",
             ephemeral=True,
         )
         return None
@@ -196,7 +196,7 @@ async def connect_player(
 
     if channel is None:
         await interaction.followup.send(
-            "Rejoins un salon vocal avant d'utiliser cette commande.",
+            "Get in a voice channel to use this command.",
             ephemeral=True,
         )
         return None
@@ -207,7 +207,7 @@ async def connect_player(
         if player.voice and player.voice.is_connected():
             if player.voice.channel != channel:
                 await interaction.followup.send(
-                    "Le bot est déjà dans un autre salon vocal.",
+                    "The bot is already in use.",
                     ephemeral=True,
                 )
                 return None
@@ -217,10 +217,10 @@ async def connect_player(
         return player
 
     except (discord.ClientException, asyncio.TimeoutError):
-        logger.exception("Impossible de rejoindre le salon vocal.")
+        logger.exception("Could not join voice channel.")
 
         await interaction.followup.send(
-            "Impossible de rejoindre le salon vocal.",
+            "Could not join voice channel.",
             ephemeral=True,
         )
         return None
@@ -242,16 +242,16 @@ async def on_ready():
 
 @bot.tree.command(
     name="play",
-    description="Ajoute un lien YouTube à la file d'attente.",
+    description="Adds a youtube link to the queue.",
 )
-@app_commands.describe(url="Lien direct vers une vidéo YouTube")
+@app_commands.describe(url="Direct youtube video link")
 @app_commands.guild_only()
 async def play(interaction: discord.Interaction, url: str):
     await interaction.response.defer(thinking=True)
 
     if not is_youtube_url(url):
         await interaction.followup.send(
-            "Fournis un lien valide vers une vidéo YouTube.",
+            "Requires a valid youtube link.",
             ephemeral=True,
         )
         return
@@ -267,14 +267,14 @@ async def play(interaction: discord.Interaction, url: str):
 
         if info.get("_type") == "playlist":
             await interaction.followup.send(
-                "Les playlists ne sont pas prises en charge.",
+                "Playlists are not supported.",
                 ephemeral=True,
             )
             return
 
         track = Track(
             url=info.get("webpage_url") or url,
-            title=info.get("title") or "Titre inconnu",
+            title=info.get("title") or "Unrecognized",
             requester=interaction.user.display_name,
         )
 
@@ -290,64 +290,64 @@ async def play(interaction: discord.Interaction, url: str):
             await player.play_next()
 
         if player.current is track:
-            message = f"🎵 **Lecture :** {track.title}"
+            message = f"🎵 **Playing :** {track.title}"
         else:
             position = len(player.queue)
             message = (
-                f"➕ **Ajouté à la file :** {track.title}\n"
-                f"Position dans la file : {position}"
+                f"➕ **Queued :** {track.title}\n"
+                f"in queue : {position}"
             )
 
         await interaction.followup.send(message)
 
     except Exception:
-        logger.exception("Erreur lors de l'ajout d'un lien.")
+        logger.exception("Could not add link.")
 
         await interaction.followup.send(
-            "Impossible de récupérer ce lien. "
-            "Il est peut-être indisponible ou non pris en charge.",
+            "Could not get link. "
+            "Might not be supported.",
             ephemeral=True,
         )
 
 
-@bot.tree.command(name="pause", description="Met la musique en pause.")
+@bot.tree.command(name="pause", description="Pauses the music.")
 @app_commands.guild_only()
 async def pause(interaction: discord.Interaction):
     player = players.get(interaction.guild_id)
 
     if player and player.voice and player.voice.is_playing():
         player.voice.pause()
-        await interaction.response.send_message("⏸️ Lecture en pause.")
+        await interaction.response.send_message("⏸️ Paused.")
     else:
         await interaction.response.send_message(
-            "Aucune musique n'est en cours.",
+            "Nothing is playing.",
             ephemeral=True,
         )
 
 
-@bot.tree.command(name="resume", description="Reprend la musique.")
+@bot.tree.command(name="resume", description="Resumes the music.")
 @app_commands.guild_only()
 async def resume(interaction: discord.Interaction):
     player = players.get(interaction.guild_id)
 
     if player and player.voice and player.voice.is_paused():
         player.voice.resume()
-        await interaction.response.send_message("▶️ Lecture reprise.")
+        await interaction.response.send_message("▶️ Resumed.")
     else:
         await interaction.response.send_message(
-            "Aucune musique n'est en pause.",
+            "Not paused.",
             ephemeral=True,
         )
 
 
-@bot.tree.command(name="queue", description="Affiche la file d'attente.")
+@bot.tree.command(name="queue", description="Shows queue.")
 @app_commands.guild_only()
 async def queue_command(interaction: discord.Interaction):
     player = players.get(interaction.guild_id)
 
     if player is None:
         await interaction.response.send_message(
-            "La file d'attente est vide.",
+            "Queue is empty.",
             ephemeral=True,
         )
         return
@@ -355,26 +355,26 @@ async def queue_command(interaction: discord.Interaction):
     lines = []
 
     if player.current:
-        lines.append(f"🎵 **En cours :** {player.current.title}")
+        lines.append(f"🎵 **Playing :** {player.current.title}")
 
     if player.queue:
-        lines.append("\n**À suivre :**")
+        lines.append("\n**Next up :**")
 
         for index, track in enumerate(list(player.queue)[:10], start=1):
             lines.append(f"`{index}.` {track.title}")
 
         if len(player.queue) > 10:
             lines.append(
-                f"... et {len(player.queue) - 10} autre(s) morceau(x)."
+                f"... and {len(player.queue) - 10} other tracks"
             )
 
     if not lines:
-        lines.append("La file d'attente est vide.")
+        lines.append("Queue is empty.")
 
     await interaction.response.send_message("\n".join(lines))
 
 
-@bot.tree.command(name="skip", description="Passe au morceau suivant.")
+@bot.tree.command(name="skip", description="Skips to next track.")
 @app_commands.guild_only()
 async def skip(interaction: discord.Interaction):
     player = players.get(interaction.guild_id)
@@ -388,17 +388,17 @@ async def skip(interaction: discord.Interaction):
         )
     ):
         player.voice.stop()
-        await interaction.response.send_message("⏭️ Morceau passé.")
+        await interaction.response.send_message("⏭️ Skipped.")
     else:
         await interaction.response.send_message(
-            "Aucune musique à passer.",
+            "Nothing to skip.",
             ephemeral=True,
         )
 
 
 @bot.tree.command(
     name="stop",
-    description="Arrête la musique et vide la file.",
+    description="Stops and clears queue.",
 )
 @app_commands.guild_only()
 async def stop(interaction: discord.Interaction):
@@ -406,7 +406,7 @@ async def stop(interaction: discord.Interaction):
 
     if player is None:
         await interaction.response.send_message(
-            "Aucune musique n'est en cours.",
+            "Nothing is playing.",
             ephemeral=True,
         )
         return
@@ -414,7 +414,7 @@ async def stop(interaction: discord.Interaction):
     await player.stop()
 
     await interaction.response.send_message(
-        "⏹️ Lecture arrêtée et file d'attente vidée."
+        "⏹️ Stopped and cleared queue."
     )
 
 
