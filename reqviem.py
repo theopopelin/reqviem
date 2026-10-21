@@ -225,7 +225,6 @@ async def connect_player(
         )
         return None
 
-
 @bot.event
 async def on_ready():
     global commands_synced
@@ -233,9 +232,12 @@ async def on_ready():
     if not commands_synced:
         synced = await bot.tree.sync()
         commands_synced = True
-        logger.info("%s commandes slash synchronisées.", len(synced))
+        logger.info("%s slash commands sync", len(synced))
 
-    logger.info("Reqviem connecté en tant que %s", bot.user)
+    logger.info("Reqviem ON")
+    print('La fièvre monte.')
+    await bot.change_presence(
+        activity=discord.Activity(type=discord.ActivityType.listening, name="Hell let loose"))
 
 
 @bot.tree.command(
