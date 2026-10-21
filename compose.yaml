@@ -3,3 +3,5 @@ services:
     build: .
     container_name: reqviem
     restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN_REQVIEM
