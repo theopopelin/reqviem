@@ -1,0 +1,6 @@
+TODO 
+
+leave channel after a delay of inactivity
+
+add spotify support
+add title search
