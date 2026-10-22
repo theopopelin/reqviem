@@ -15,7 +15,7 @@ logger = logging.getLogger("reqviem")
 TOKEN = os.getenv("DISCORD_TOKEN_REQVIEM")
 
 if not TOKEN:
-    raise RuntimeError("missing DISCORD_TOKEN.")
+    raise RuntimeError("missing DISCORD_TOKEN_REQVIEM env var.")
 
 YDL_OPTIONS = {
     "format": "bestaudio/best",
