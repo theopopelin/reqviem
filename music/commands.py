@@ -83,11 +83,15 @@ def register_commands(bot: commands.Bot):
         if player is None:
             return
 
+        # Prevent a pending idle disconnect during /play.
+        player.cancel_idle_disconnect()
+
         try:
-            # Vérifie le lien et récupère le titre avant l'ajout.
             info = await asyncio.to_thread(extract_info, url)
 
             if info.get("_type") == "playlist":
+                await player.play_next()
+
                 await interaction.followup.send(
                     "Playlists are not supported.",
                     ephemeral=True,
@@ -123,6 +127,8 @@ def register_commands(bot: commands.Bot):
             await interaction.followup.send(message)
 
         except Exception:
+            await player.play_next()
+
             logger.exception("Could not add link.")
 
             await interaction.followup.send(

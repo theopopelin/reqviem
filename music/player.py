@@ -7,6 +7,9 @@ import discord
 from config import extract_info, logger
 
 
+IDLE_TIMEOUT_SECONDS = 300
+
+
 @dataclass
 class Track:
     url: str
@@ -24,6 +27,58 @@ class GuildPlayer:
         self.queue: deque[Track] = deque()
         self.current: Track | None = None
         self.lock = asyncio.Lock()
+        self.idle_task: asyncio.Task | None = None
+
+    def cancel_idle_disconnect(self):
+        """Cancel a pending idle disconnection."""
+        if self.idle_task and not self.idle_task.done():
+            self.idle_task.cancel()
+
+        self.idle_task = None
+
+    def schedule_idle_disconnect(self):
+        """Schedule a disconnection after inactivity."""
+        if self.idle_task and not self.idle_task.done():
+            return
+
+        self.idle_task = asyncio.create_task(
+            self._idle_disconnect()
+        )
+
+    async def _idle_disconnect(self):
+        try:
+            await asyncio.sleep(IDLE_TIMEOUT_SECONDS)
+
+            async with self.lock:
+                if self.queue or self.current is not None:
+                    return
+
+                if self.voice is None or not self.voice.is_connected():
+                    return
+
+                if self.voice.is_playing() or self.voice.is_paused():
+                    return
+
+                logger.info(
+                    "Disconnecting idle player on %s",
+                    self.guild.id,
+                )
+
+                await self.voice.disconnect()
+                self.voice = None
+
+        except asyncio.CancelledError:
+            raise
+
+        except Exception:
+            logger.exception(
+                "Could not disconnect idle player on %s",
+                self.guild.id,
+            )
+
+        finally:
+            if self.idle_task is asyncio.current_task():
+                self.idle_task = None
 
     async def play_next(self):
         async with self.lock:
@@ -37,6 +92,8 @@ class GuildPlayer:
             self.current = None
 
             while self.queue:
+                self.cancel_idle_disconnect()
+
                 track = self.queue.popleft()
                 self.current = track
 
@@ -49,7 +106,9 @@ class GuildPlayer:
                     audio_url = info.get("url")
 
                     if not audio_url:
-                        raise ValueError("No audio stream available.")
+                        raise ValueError(
+                            "No audio stream available."
+                        )
 
                     source = discord.FFmpegPCMAudio(
                         audio_url,
@@ -97,6 +156,7 @@ class GuildPlayer:
                     self.current = None
 
             logger.info("Empty queue on %s", self.guild.id)
+            self.schedule_idle_disconnect()
 
     async def _after_playback(self):
         self.current = None
@@ -110,6 +170,9 @@ class GuildPlayer:
                 self.voice.stop()
 
         self.current = None
+
+        # Start the idle timer, including when already idle.
+        await self.play_next()
 
 
 def get_player(guild: discord.Guild) -> GuildPlayer:
