@@ -13,14 +13,14 @@ async def connect_player(
 ) -> "GuildPlayer | None":
     if interaction.guild is None:
         await interaction.followup.send(
-            "Command must be used on a server.",
+            "Not in a server",
             ephemeral=True,
         )
         return None
 
     if not isinstance(interaction.user, discord.Member):
         await interaction.followup.send(
-            "Could not get discord user.",
+            "Could not get discord user",
             ephemeral=True,
         )
         return None
@@ -30,7 +30,7 @@ async def connect_player(
 
     if channel is None:
         await interaction.followup.send(
-            "Get in a voice channel to use this command.",
+            "Get in a voice channel",
             ephemeral=True,
         )
         return None
@@ -41,7 +41,7 @@ async def connect_player(
         if player.voice and player.voice.is_connected():
             if player.voice.channel != channel:
                 await interaction.followup.send(
-                    "The bot is already in use.",
+                    "The bot is already in use",
                     ephemeral=True,
                 )
                 return None
@@ -51,10 +51,10 @@ async def connect_player(
         return player
 
     except (discord.ClientException, asyncio.TimeoutError):
-        logger.exception("Could not join voice channel.")
+        logger.exception("Could not join")
 
         await interaction.followup.send(
-            "Could not join voice channel.",
+            "Could not join",
             ephemeral=True,
         )
         return None
@@ -66,14 +66,14 @@ def register_commands(bot: commands.Bot):
         name="play",
         description="Adds a youtube link to the queue.",
     )
-    @app_commands.describe(url="Direct youtube video link")
+    @app_commands.describe(url="Direct youtube link")
     @app_commands.guild_only()
     async def play(interaction: discord.Interaction, url: str):
         await interaction.response.defer(thinking=True)
 
         if not is_youtube_url(url):
             await interaction.followup.send(
-                "Requires a valid youtube link.",
+                "Provide a valid youtube link",
                 ephemeral=True,
             )
             return
@@ -93,7 +93,7 @@ def register_commands(bot: commands.Bot):
                 await player.play_next()
 
                 await interaction.followup.send(
-                    "Playlists are not supported.",
+                    "Playlists are not supported",
                     ephemeral=True,
                 )
                 return
@@ -129,17 +129,17 @@ def register_commands(bot: commands.Bot):
         except Exception:
             await player.play_next()
 
-            logger.exception("Could not add link.")
+            logger.exception("Could not add link")
 
             await interaction.followup.send(
-                "Could not get link. "
-                "Might not be supported.",
+                "Could not get link "
+                "Might not be supported",
                 ephemeral=True,
             )
 
     @bot.tree.command(
         name="pause",
-        description="Pauses the music.",
+        description="Pause",
     )
     @app_commands.guild_only()
     async def pause(interaction: discord.Interaction):
@@ -147,16 +147,16 @@ def register_commands(bot: commands.Bot):
 
         if player and player.voice and player.voice.is_playing():
             player.voice.pause()
-            await interaction.response.send_message("⏸️ Paused.")
+            await interaction.response.send_message("⏸️ Paused")
         else:
             await interaction.response.send_message(
-                "Nothing is playing.",
+                "Not playing",
                 ephemeral=True,
             )
 
     @bot.tree.command(
         name="resume",
-        description="Resumes the music.",
+        description="Resume",
     )
     @app_commands.guild_only()
     async def resume(interaction: discord.Interaction):
@@ -164,16 +164,16 @@ def register_commands(bot: commands.Bot):
 
         if player and player.voice and player.voice.is_paused():
             player.voice.resume()
-            await interaction.response.send_message("▶️ Resumed.")
+            await interaction.response.send_message("▶️ Resumed")
         else:
             await interaction.response.send_message(
-                "Not paused.",
+                "Not paused",
                 ephemeral=True,
             )
 
     @bot.tree.command(
         name="queue",
-        description="Shows queue.",
+        description="Show queue",
     )
     @app_commands.guild_only()
     async def queue_command(interaction: discord.Interaction):
@@ -181,7 +181,7 @@ def register_commands(bot: commands.Bot):
 
         if player is None:
             await interaction.response.send_message(
-                "Queue is empty.",
+                "Empty queue",
                 ephemeral=True,
             )
             return
@@ -204,17 +204,17 @@ def register_commands(bot: commands.Bot):
 
             if len(player.queue) > 10:
                 lines.append(
-                    f"... and {len(player.queue) - 10} other tracks"
+                    f"... and {len(player.queue) - 10} others"
                 )
 
         if not lines:
-            lines.append("Queue is empty.")
+            lines.append("Empty queue")
 
         await interaction.response.send_message("\n".join(lines))
 
     @bot.tree.command(
         name="skip",
-        description="Skips to next track.",
+        description="Skip",
     )
     @app_commands.guild_only()
     async def skip(interaction: discord.Interaction):
@@ -229,16 +229,16 @@ def register_commands(bot: commands.Bot):
             )
         ):
             player.voice.stop()
-            await interaction.response.send_message("⏭️ Skipped.")
+            await interaction.response.send_message("⏭️ Skipped")
         else:
             await interaction.response.send_message(
-                "Nothing to skip.",
+                "Not playing",
                 ephemeral=True,
             )
 
     @bot.tree.command(
         name="stop",
-        description="Stops and clears queue.",
+        description="Stop and clear queue",
     )
     @app_commands.guild_only()
     async def stop(interaction: discord.Interaction):
@@ -246,7 +246,7 @@ def register_commands(bot: commands.Bot):
 
         if player is None:
             await interaction.response.send_message(
-                "Nothing is playing.",
+                "Not playing",
                 ephemeral=True,
             )
             return
@@ -254,5 +254,5 @@ def register_commands(bot: commands.Bot):
         await player.stop()
 
         await interaction.response.send_message(
-            "⏹️ Stopped and cleared queue."
+            "⏹️ Stopped and cleared queue"
         )
