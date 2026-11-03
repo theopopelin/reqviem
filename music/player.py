@@ -8,6 +8,7 @@ from config import extract_info, logger
 
 
 IDLE_TIMEOUT_SECONDS = 300
+DEFAULT_VOLUME = 0.3
 
 
 @dataclass
@@ -110,14 +111,17 @@ class GuildPlayer:
                             "No audio stream available."
                         )
 
-                    source = discord.FFmpegPCMAudio(
-                        audio_url,
-                        before_options=(
-                            "-reconnect 1 "
-                            "-reconnect_streamed 1 "
-                            "-reconnect_delay_max 5"
+                    source = discord.PCMVolumeTransformer(
+                        discord.FFmpegPCMAudio(
+                            audio_url,
+                            before_options=(
+                                "-reconnect 1 "
+                                "-reconnect_streamed 1 "
+                                "-reconnect_delay_max 5"
+                            ),
+                            options="-vn",
                         ),
-                        options="-vn",
+                        volume=DEFAULT_VOLUME,
                     )
 
                     loop = asyncio.get_running_loop()
