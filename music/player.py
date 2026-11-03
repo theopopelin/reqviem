@@ -8,7 +8,7 @@ from config import extract_info, logger
 
 
 IDLE_TIMEOUT_SECONDS = 300
-DEFAULT_VOLUME = 0.3
+DEFAULT_VOLUME = 0.5
 
 
 @dataclass
