@@ -1,4 +1,6 @@
-!(reqviem_banner.webp)
+<p align="center">
+  <img src="reqviem_banner.webp" width="700">
+</p>
 
 Reqviem plays audio from YouTube links directly in Discord voice channels, with slash commands and per-server playback queues.
 
