@@ -27,10 +27,10 @@ in this case, just directly run `reqviem.py`
 Create a `.env` file in the project root:
 
 ```env
-DISCORD_TOKEN=your_discord_bot_token
+DISCORD_TOKEN_REQVIEM=your_discord_bot_token
 ```
 
-Alternatively, provide the token through the `DISCORD_TOKEN` environment variable.
+Alternatively, provide the token through the `DISCORD_TOKEN_REQVIEM` environment variable.
 
 Invite your bot to your Discord server with the `bot` and `applications.commands` scopes, and grant it permission to view channels, send messages, connect to voice channels, and speak.
 
