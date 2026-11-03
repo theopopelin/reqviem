@@ -1,4 +1,4 @@
-# Reqviem
+!(assets/banner.png)
 
 Reqviem plays audio from YouTube links directly in Discord voice channels, with slash commands and per-server playback queues.
 
@@ -8,7 +8,8 @@ Reqviem plays audio from YouTube links directly in Discord voice channels, with 
 - Pause and resume playback, Skip tracks
 - Manage per-server queues, Stop playback and clear queue
 
-- Dockerized for deployment
+- Dockerized for deployment, you can just run it with your own python environment if you don't use Docker 
+in this case, just directly run `reqviem.py`
 - Python 3.12
 - discord.py
 
@@ -27,7 +28,7 @@ Create a `.env` file in the project root:
 DISCORD_TOKEN=your_discord_bot_token
 ```
 
-Alternatively, provide the token through the DISCORD_TOKEN environment variable.
+Alternatively, provide the token through the `DISCORD_TOKEN` environment variable.
 
 Invite your bot to your Discord server with the `bot` and `applications.commands` scopes, and grant it permission to view channels, send messages, connect to voice channels, and speak.
 
