@@ -4,7 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from config import extract_info, is_youtube_url, logger
+from config import extract_playlist_info, is_youtube_url, logger
 from music.player import Track, get_player, players
 
 
@@ -60,6 +60,43 @@ async def connect_player(
         return None
 
 
+def get_playlist_tracks(info: dict, requester: str) -> list[Track]:
+    tracks = []
+
+    for entry in info.get("entries") or []:
+        if not entry:
+            continue
+
+        video_url = entry.get("webpage_url")
+
+        if not video_url:
+            video_id = entry.get("id")
+
+            if video_id:
+                video_url = f"https://www.youtube.com/watch?v={video_id}"
+
+        if not video_url:
+            entry_url = entry.get("url")
+
+            if isinstance(entry_url, str) and entry_url.startswith(
+                ("http://", "https://")
+            ):
+                video_url = entry_url
+
+        if not video_url:
+            continue
+
+        tracks.append(
+            Track(
+                url=video_url,
+                title=entry.get("title") or "Unrecognized",
+                requester=requester,
+            )
+        )
+
+    return tracks
+
+
 def register_commands(bot: commands.Bot):
 
     @bot.tree.command(
@@ -87,44 +124,65 @@ def register_commands(bot: commands.Bot):
         player.cancel_idle_disconnect()
 
         try:
-            info = await asyncio.to_thread(extract_info, url)
+            info = await asyncio.to_thread(extract_playlist_info, url)
 
-            if info.get("_type") == "playlist":
-                await player.play_next()
+            if info.get("_type") in {"playlist", "multi_video"}:
+                tracks = get_playlist_tracks(
+                    info,
+                    interaction.user.display_name,
+                )
+
+                if not tracks:
+                    await interaction.followup.send(
+                        "No playable videos found in this playlist.",
+                        ephemeral=True,
+                    )
+                    return
+
+                player.queue.extend(tracks)
+
+                was_idle = (
+                    player.current is None
+                    and not player.voice.is_playing()
+                    and not player.voice.is_paused()
+                )
+
+                if was_idle:
+                    await player.play_next()
 
                 await interaction.followup.send(
-                    "Playlists are not supported",
-                    ephemeral=True,
+                    f"➕ **Playlist added:** {info.get('title') or 'YouTube playlist'}\n"
+                    f"{len(tracks)} tracks added to the queue."
                 )
-                return
 
-            track = Track(
-                url=info.get("webpage_url") or url,
-                title=info.get("title") or "Unrecognized",
-                requester=interaction.user.display_name,
-            )
-
-            player.queue.append(track)
-
-            was_idle = (
-                player.current is None
-                and not player.voice.is_playing()
-                and not player.voice.is_paused()
-            )
-
-            if was_idle:
-                await player.play_next()
-
-            if player.current is track:
-                message = f"🎵 **Playing :** {track.title}"
             else:
-                position = len(player.queue)
-                message = (
-                    f"➕ **Queued :** {track.title}\n"
-                    f"in queue : {position}"
+                track = Track(
+                    url=info.get("webpage_url") or url,
+                    title=info.get("title") or "Unrecognized",
+                    requester=interaction.user.display_name,
                 )
 
-            await interaction.followup.send(message)
+                player.queue.append(track)
+
+                was_idle = (
+                    player.current is None
+                    and not player.voice.is_playing()
+                    and not player.voice.is_paused()
+                )
+
+                if was_idle:
+                    await player.play_next()
+
+                if player.current is track:
+                    message = f"🎵 **Playing :** {track.title}"
+                else:
+                    position = len(player.queue)
+                    message = (
+                        f"➕ **Queued :** {track.title}\n"
+                        f"in queue : {position}"
+                    )
+
+                await interaction.followup.send(message)
 
         except Exception:
             await player.play_next()
