@@ -68,6 +68,7 @@ docker compose down
 | `/queue` | Display the current queue |
 | `/skip` | Skip the current track |
 | `/stop` | Stop playback and clear the queue |
+| `/shuffle` | Shuffles the queue |
 
 ## Notes
 
