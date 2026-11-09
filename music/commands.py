@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 import discord
 from discord import app_commands
@@ -269,6 +270,31 @@ def register_commands(bot: commands.Bot):
             lines.append("Empty queue")
 
         await interaction.response.send_message("\n".join(lines))
+
+    @bot.tree.command(
+        name="shuffle",
+        description="Shuffle the queue",
+    )
+    @app_commands.guild_only()
+    async def shuffle(interaction: discord.Interaction):
+        player = players.get(interaction.guild_id)
+
+        if player is None or not player.queue:
+            await interaction.response.send_message(
+                "Nothing to shuffle",
+                ephemeral=True,
+            )
+            return
+
+        tracks = list(player.queue)
+        random.shuffle(tracks)
+
+        player.queue.clear()
+        player.queue.extend(tracks)
+
+        await interaction.response.send_message(
+            f"🔀 Shuffled {len(tracks)} tracks"
+        )
 
     @bot.tree.command(
         name="skip",
